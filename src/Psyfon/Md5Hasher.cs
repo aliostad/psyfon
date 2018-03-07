@@ -12,7 +12,7 @@ namespace Psyfon
         public string Hash(string value, int numberOfBuckets)
         {
             var bytes = _md5.ComputeHash(Encoding.UTF8.GetBytes(value));
-            var firstChunk = BitConverter.ToInt64(bytes, 0);
+            var firstChunk = Math.Abs(BitConverter.ToInt32(bytes, 0));
             return (firstChunk % numberOfBuckets).ToString();
         }
     }

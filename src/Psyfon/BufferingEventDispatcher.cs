@@ -8,28 +8,28 @@ using System.Threading.Tasks;
 
 namespace Psyfon
 {
-    public class EventBuffer : IDisposable
+    public class BufferingEventDispatcher : IDisposable
     {
         private ConcurrentQueue<Tuple<EventData, string>> _queue = new ConcurrentQueue<Tuple<EventData, string>>();
         private const int DefaultBatchSize = 128 * 1024; // 128KB
         private readonly IHasher _hasher;
         private readonly IEventHubClientWrapper _client;
         private readonly int _batchBufferSize;
-        private readonly int _partitionCount;
+        private int _partitionCount;
         private bool _isAccepting = true;
         private Thread _worker;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private ConcurrentDictionary<string, Lazy<PartitionCommitter>> _committers = new ConcurrentDictionary<string, Lazy<PartitionCommitter>>();
 
 
-        public EventBuffer(string connectionString,
+        public BufferingEventDispatcher(string connectionString,
             int batchBufferSize = DefaultBatchSize,
             IHasher hasher = null):
             this(new DefaultWrapper(EventHubClient.CreateFromConnectionString(connectionString)), batchBufferSize, hasher)
         {
         }
 
-        public EventBuffer(IEventHubClientWrapper client,
+        public BufferingEventDispatcher(IEventHubClientWrapper client,
             int batchBufferSize = DefaultBatchSize,
             IHasher hasher = null
             )
@@ -96,6 +96,7 @@ namespace Psyfon
 
         public void Start()
         {
+            _partitionCount = _client.GetPartitionCount().GetAwaiter().GetResult();
             _worker = new Thread(Work);
             _worker.Start();
         }
