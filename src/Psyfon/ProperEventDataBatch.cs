@@ -25,7 +25,7 @@ namespace Psyfon
 
         public bool TryAdd(EventData @event)
         {
-            if (_currentSize + @event.Body.Count < _maxSize)
+            if (_currentSize + @event.Body.Count <= _maxSize)
             {
                 _events.Add(@event);
                 Interlocked.Add(ref _currentSize, @event.Body.Count);

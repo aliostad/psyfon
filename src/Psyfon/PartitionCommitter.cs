@@ -61,10 +61,13 @@ namespace Psyfon
         public void Dispose()
         {
             _cancellationTokenSource.Cancel();
+
             if (_batches.Count > 0)
             {
                 Thread.Sleep(200);
             }
+
+            Commit(_currentBatch);
         }
 
         public string PartitionKey { get; }
