@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 namespace Psyfon
 {
-    public class Md5Hasher : IHasher
+    internal class Md5Hasher : IHasher
     {
         private MD5CryptoServiceProvider _md5 = new MD5CryptoServiceProvider();
 

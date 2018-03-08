@@ -4,14 +4,15 @@
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
 		<Summary>A High-Performance Azure EventHubs Sink capable of buffering/batching</Summary>
 		<Description>A High-Performance Azure EventHubs Sink capable of buffering/batching</Description>
-		<VersionPrefix>0.1.0</VersionPrefix>
-		<VersionSuffix>alpha</VersionSuffix>        
+		<VersionPrefix>0.1.1</VersionPrefix>
+		<VersionSuffix>alpha</VersionSuffix>		
 		<Authors>Ali Kheyrollahi</Authors>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<AssemblyName>Psyfon</AssemblyName>
 		<PackageId>Psyfon</PackageId>
 		<PackageProjectUrl>https://github.com/aliostad/psyfon</PackageProjectUrl>
-		<PackageLicenseUrl>https://github.com/aliostad/psyfon/blob/master/LICENSE</PackageLicenseUrl>	
+		<PackageLicenseUrl>https://github.com/aliostad/psyfon/blob/master/LICENSE</PackageLicenseUrl>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
 	<ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">

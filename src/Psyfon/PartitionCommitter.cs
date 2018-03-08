@@ -2,26 +2,29 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 
 namespace Psyfon
 {
-    public class PartitionCommitter : IDisposable
+    internal class PartitionCommitter : IDisposable
     {
         private ProperEventDataBatch _currentBatch;
         private readonly IEventHubClientWrapper _client;
         private readonly int _batchSize;
+        private readonly Action<TraceLevel, string> _logger;
         private readonly BlockingCollection<ProperEventDataBatch> _batches = new BlockingCollection<ProperEventDataBatch>();
         private object _lock = new object();
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private Thread _worker;
 
-        public PartitionCommitter(IEventHubClientWrapper client, int batchSize, string partitionKey)
+        public PartitionCommitter(IEventHubClientWrapper client, int batchSize, string partitionKey, Action<TraceLevel, string> logger)
         {
             _client = client;
             _batchSize = batchSize;
             PartitionKey = partitionKey;
+            _logger = logger;
             _currentBatch = new ProperEventDataBatch(batchSize, partitionKey);
             _worker = new Thread(Work);
             _worker.Start();
@@ -53,8 +56,21 @@ namespace Psyfon
             var token = _cancellationTokenSource.Token;
             while (!token.IsCancellationRequested)
             {
-                var batch = _batches.Take(token);
-                Commit(batch);
+                ProperEventDataBatch batch = null;
+
+                try
+                {
+                    batch = _batches.Take(token);
+                    Commit(batch);
+                }
+                catch (Exception e)
+                {
+                    if (batch != null)
+                        _batches.Add(batch);
+
+                    _logger(TraceLevel.Error, e.ToString());
+                }
+                
             }            
         }
 
