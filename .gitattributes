@@ -4,11 +4,13 @@
 
 # Custom for Visual Studio
 *.cs text eol=crlf diff=csharp
+*.bat text eol=crlf
 *.sln text eol=crlf   merge=union
 *.csproj text eol=crlf merge=union
 *.vbproj text eol=crlf merge=union
 *.fsproj text eol=crlf merge=union
 *.dbproj text eol=crlf merge=union
+
 
 # Standard to msysgit
 *.doc	 diff=astextplain
