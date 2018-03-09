@@ -25,10 +25,10 @@ namespace Psyfon
 
         public bool TryAdd(EventData @event)
         {
-            if (_currentSize + @event.Body.Count <= _maxSize)
+            if (_currentSize + @event.Body.Array.Length <= _maxSize)
             {
                 _events.Add(@event);
-                Interlocked.Add(ref _currentSize, @event.Body.Count);
+                Interlocked.Add(ref _currentSize, @event.Body.Array.Length);
                 return true;
             }
             else
@@ -38,7 +38,7 @@ namespace Psyfon
         public void Add(EventData @event)
         {
             _events.Add(@event);
-            Interlocked.Add(ref _currentSize, @event.Body.Count);
+            Interlocked.Add(ref _currentSize, @event.Body.Array.Length);
         }
     }
 }
