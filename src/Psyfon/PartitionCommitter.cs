@@ -65,7 +65,7 @@ namespace Psyfon
                 }
                 catch (Exception e)
                 {
-                    if (batch != null)
+                    if (batch != null && batch.RetryCount++ < 3) 
                         _batches.Add(batch);
 
                     _logger(TraceLevel.Error, e.ToString());

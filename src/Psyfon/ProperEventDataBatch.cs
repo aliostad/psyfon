@@ -13,6 +13,8 @@ namespace Psyfon
         private ConcurrentBag<EventData> _events = new ConcurrentBag<EventData>();
         private volatile int _currentSize = 0;
 
+        public int RetryCount { get; set; }
+
         public ProperEventDataBatch(int maxSize, string partitionKey)
         {
             _maxSize = maxSize;
