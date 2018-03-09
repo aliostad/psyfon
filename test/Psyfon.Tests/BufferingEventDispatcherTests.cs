@@ -1,17 +1,18 @@
 ﻿using Microsoft.Azure.EventHubs;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
-using Xunit;
 
 namespace Psyfon.Tests
 {
+    [TestFixture]
     public class BufferingEventDispatcherTests
     {
         const int PartCount = 32;
 
-        [Fact]
+        [Test]
         public void DoesWhatItSaysOnTheTin()
         {
             var cli = new DummyClient(PartCount);
@@ -28,8 +29,8 @@ namespace Psyfon.Tests
             bed.Dispose();
             Thread.Sleep(200);
 
-            Assert.Equal(100, cli.Events.Count);
-            Assert.Equal(20, cli.CountSent);
+            Assert.AreEqual(100, cli.Events.Count);
+            Assert.AreEqual(20, cli.CountSent);
 
         }
     }

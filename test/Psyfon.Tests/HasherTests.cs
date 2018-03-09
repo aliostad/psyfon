@@ -1,13 +1,14 @@
-﻿using System;
+﻿using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Text;
-using Xunit;
 
 namespace Psyfon.Tests
 {
+    [TestFixture]
     public class HasherTests
     {
-        [Fact]
+        [Test]
         public void Md5HasherHashersToBuckets()
         {
             int bucketCount = 4;
@@ -19,7 +20,7 @@ namespace Psyfon.Tests
                 dic[hasher.Hash(Guid.NewGuid().ToString(), bucketCount)] = null;
             }
 
-            Assert.Equal(bucketCount, dic.Count);
+            Assert.AreEqual(bucketCount, dic.Count);
         }
     }
 }
