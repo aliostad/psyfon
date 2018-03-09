@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Psyfon
 {
@@ -62,6 +63,11 @@ namespace Psyfon
                 {
                     batch = _batches.Take(token);
                     Commit(batch);
+                }
+                catch (OperationCanceledException tce)
+                {
+                    // CANNOT CATCH - I KNOW
+                    // ignore
                 }
                 catch (Exception e)
                 {

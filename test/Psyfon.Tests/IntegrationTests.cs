@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.EventHubs;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using Xunit;
@@ -13,8 +14,15 @@ namespace Psyfon.Tests
         public void CanTrulyPush()
         {
             var cn = Environment.GetEnvironmentVariable("EH_CN_PSYFON");
-           
-            var bed = new BufferingEventDispatcher(cn);
+
+            Action<TraceLevel, string> logger = (t, s) =>
+            {
+                if (t == TraceLevel.Error)
+                    throw new Exception(s);
+            };
+
+
+            var bed = new BufferingEventDispatcher(cn, logger: logger);
             bed.Start();
             for (int i = 0; i < 100; i++)
             {
