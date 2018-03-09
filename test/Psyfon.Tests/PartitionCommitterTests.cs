@@ -1,18 +1,17 @@
 ﻿using Microsoft.Azure.EventHubs;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Xunit;
 
 namespace Psyfon.Tests
 {
-    [TestFixture]
     public class PartitionCommitterTests
     {
         const int PartCount = 32;
 
-        [Test]
+        [Fact]
         public void SendsAll()
         {
             var cli = new DummyClient(PartCount);
@@ -27,8 +26,8 @@ namespace Psyfon.Tests
             Thread.Sleep(1000);
             pc.Dispose();
 
-            Assert.AreEqual(100, cli.Events.Count);
-            Assert.AreEqual(20, cli.CountSent);
+            Assert.Equal(100, cli.Events.Count);
+            Assert.Equal(20, cli.CountSent);
         }
 
     }
