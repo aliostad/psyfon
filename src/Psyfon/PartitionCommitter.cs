@@ -49,6 +49,7 @@ namespace Psyfon
 
         private void Commit(ProperEventDataBatch batch)
         {
+            _logger(TraceLevel.Verbose, $"About to commit batch of size: {batch.CurrentSize}");
             _client.SendBatchAsync(batch.EventData, PartitionKey).GetAwaiter().GetResult(); // no point in doing async, dedicated thread would be waiting anyway
         }
 

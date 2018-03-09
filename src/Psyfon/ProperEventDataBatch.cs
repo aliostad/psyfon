@@ -7,11 +7,14 @@ using System.Threading;
 
 namespace Psyfon
 {
-    public class ProperEventDataBatch
+    internal class ProperEventDataBatch
     {
         private readonly int _maxSize;
         private ConcurrentBag<EventData> _events = new ConcurrentBag<EventData>();
         private volatile int _currentSize = 0;
+        private object _lock = new object();
+
+        public int CurrentSize => CurrentSize;
 
         public int RetryCount { get; set; }
 
@@ -29,9 +32,17 @@ namespace Psyfon
         {
             if (_currentSize + @event.Body.Array.Length <= _maxSize)
             {
-                _events.Add(@event);
-                Interlocked.Add(ref _currentSize, @event.Body.Array.Length);
-                return true;
+                lock(_lock)
+                {
+                    if (_currentSize + @event.Body.Array.Length <= _maxSize)
+                    {
+                        _events.Add(@event);
+                        Interlocked.Add(ref _currentSize, @event.Body.Array.Length);
+                        return true;
+                    }
+                    else
+                        return false;
+                }               
             }
             else
                 return false;
