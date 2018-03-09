@@ -14,7 +14,7 @@ namespace Psyfon
         private volatile int _currentSize = 0;
         private object _lock = new object();
 
-        public int CurrentSize => CurrentSize;
+        public int CurrentSize => _currentSize;
 
         public int RetryCount { get; set; }
 
@@ -32,7 +32,7 @@ namespace Psyfon
         {
             if (_currentSize + @event.Body.Array.Length <= _maxSize)
             {
-                lock(_lock)
+                lock (_lock)
                 {
                     if (_currentSize + @event.Body.Array.Length <= _maxSize)
                     {
@@ -42,7 +42,7 @@ namespace Psyfon
                     }
                     else
                         return false;
-                }               
+                }
             }
             else
                 return false;
