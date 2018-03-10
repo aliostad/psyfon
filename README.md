@@ -1,3 +1,5 @@
+![AppVeyor](https://ci.appveyor.com/api/projects/status/github/aliostad/psyfon?svg=True)
+
 # Psyfon
 A High-Performance Azure EventHubs Sink capable of buffering/batching and regularly commiting your events. It supports .NET Standard 2.0 (netstandard2.0) and .NET 4.52 (net452).
 
