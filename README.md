@@ -8,13 +8,13 @@ Install-Package Psyfon
 ```
 Then create a single instance for the application/process:
 ``` csharp
-var dispatcher = new BufferingEventDispatcher("<YOUR EVENTHUB CONNECTION STRING>") // make sure specify TransportType=Amqp
+var dispatcher = new BufferingEventDispatcher("<YOUR EVENTHUB CONNECTION STRING>"); // make sure specify TransportType=Amqp
 ```
 And in your application, simply create `EvenetData` and `Add` (optionally send a PartitionKey):
 
 ```
 var ed = new EventData(myEventSerialisedAsByteArray);
-dispatcher.Add(ed);
+dispatcher.Add(ed); // you may also supply an optional PartitionKey string.
 ```
 
 That is it!
