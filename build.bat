@@ -1,2 +1,2 @@
 dotnet restore
-dotnet test
+dotnet test -v d
