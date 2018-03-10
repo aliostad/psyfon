@@ -25,6 +25,7 @@ namespace Psyfon
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private ConcurrentDictionary<int, Lazy<PartitionCommitter>> _committers = new ConcurrentDictionary<int, Lazy<PartitionCommitter>>();
         private Action<TraceLevel, string> _logger;
+        private DateTimeOffset _lastPoke;
 
         /// <summary>
         /// Main Constructor
@@ -104,6 +105,8 @@ namespace Psyfon
 
         private void Work()
         {
+            _lastPoke = DateTimeOffset.Now;
+
             while (!_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 Tuple<EventData, string> data;
@@ -123,6 +126,15 @@ namespace Psyfon
                     {
                         // ignore
                     }                   
+                }
+            }
+
+            if(DateTimeOffset.Now.Subtract(_lastPoke).TotalSeconds > _maxSendIntervalSeconds)
+            {
+                _lastPoke = DateTimeOffset.Now;
+                foreach (var c in _committers.Values)
+                {
+                    c.Value.CheckTimeElapsedSinceLastRebatch();
                 }
             }
         }

@@ -41,19 +41,35 @@ namespace Psyfon
             if (_lastSent == default(DateTimeOffset))
                 _lastSent = DateTimeOffset.Now;
 
-            if (DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds ||  (!_currentBatch.TryAdd(@event)))
+            Func<bool> predicate = () => DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds || 
+                    (!_currentBatch.TryAdd(@event));
+            RebatchIfConditionMet(predicate, () => _currentBatch.Add(@event));               
+        }
+
+        private bool RebatchIfConditionMet(Func<bool> predicate, Action doIfRebatch = null)
+        {
+            if(predicate())
             {
                 lock (_lock)
                 {
-                    if (DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds || !_currentBatch.TryAdd(@event))
+                    if(predicate())
                     {
                         _lastSent = DateTimeOffset.Now;
                         _batches.Add(_currentBatch);
                         _currentBatch = new ProperEventDataBatch(_maxBatchSize);
-                        _currentBatch.Add(@event);
+                        if(doIfRebatch != null)
+                            doIfRebatch();
+                        return true;
                     }
                 }
             }
+
+            return false;
+        }
+
+        public void CheckTimeElapsedSinceLastRebatch()
+        {
+            RebatchIfConditionMet(() => DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds);
         }
 
         private void Commit(ProperEventDataBatch batch)
