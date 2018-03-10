@@ -19,10 +19,7 @@ namespace Psyfon
         public async Task SendBatchAsync(IEnumerable<EventData> events)
         {
 #if NET452
-            foreach (var item in events)
-	        {
-                await _sender.SendAsync(item);
-	        }
+            await _sender.SendAsync(events);
 #else
             var batch = new EventDataBatch(250 * 1024);
             foreach (var item in events)

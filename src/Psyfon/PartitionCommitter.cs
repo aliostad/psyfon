@@ -30,6 +30,8 @@ namespace Psyfon
             _worker.Start();
         }
 
+        public string Name { get; set; }
+
         public void Add(EventData @event)
         {
             if (!_currentBatch.TryAdd(@event))
@@ -48,8 +50,9 @@ namespace Psyfon
 
         private void Commit(ProperEventDataBatch batch)
         {
-            _logger(TraceLevel.Verbose, $"About to commit batch of size: {batch.CurrentSize}");            
+            _logger(TraceLevel.Verbose, $"{Name}: About to commit batch of size: {batch.CurrentSize}");            
             _sender.SendBatchAsync(batch.EventData).GetAwaiter().GetResult(); // no point in doing async, dedicated thread would be waiting anyway
+            _logger(TraceLevel.Verbose, $"{Name}: Successfully sent batch. {_batches.Count} batches left");
         }
 
         private void Work()

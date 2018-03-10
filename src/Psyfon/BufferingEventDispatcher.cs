@@ -150,9 +150,13 @@ namespace Psyfon
             foreach (var pid in _partitions)
             {
                 _committers.GetOrAdd(i++,
-                        new Lazy<PartitionCommitter>(() => new PartitionCommitter(_client.CreatePartitionSender(pid), _batchBufferSize, _logger)));
+                        new Lazy<PartitionCommitter>(
+                            () => new PartitionCommitter(_client.CreatePartitionSender(pid), _batchBufferSize, _logger)
+                            {
+                                Name = $"PartitionCommitter-{pid}"
+                            }));
             }
-            var committer = 
+
             _worker = new Thread(Work);
             _worker.Start();
         }
