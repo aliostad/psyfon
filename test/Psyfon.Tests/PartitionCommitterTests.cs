@@ -16,7 +16,7 @@ namespace Psyfon.Tests
         {
             var cli = new DummyClient(PartCount);
             var batch = new List<EventData>();
-            var pc = new PartitionCommitter(cli, 1000, (a,b) => { });
+            var pc = new PartitionCommitter(cli, 1000, 30, (a,b) => { });
             
             for (int i = 0; i < 100; i++)
             {

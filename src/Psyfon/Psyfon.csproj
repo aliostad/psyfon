@@ -4,8 +4,8 @@
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
 		<Summary>A High-Performance Azure EventHubs Sink capable of buffering/batching</Summary>
 		<Description>A High-Performance Azure EventHubs Sink capable of buffering/batching</Description>
-		<VersionPrefix>0.2.1</VersionPrefix>
-		<VersionSuffix>alpha</VersionSuffix>		
+		<VersionPrefix>0.3.0</VersionPrefix>
+		<VersionSuffix></VersionSuffix>		
 		<Authors>Ali Kheyrollahi</Authors>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<AssemblyName>Psyfon</AssemblyName>

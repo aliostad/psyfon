@@ -11,11 +11,14 @@ namespace Psyfon
 {
     public class BufferingEventDispatcher : IDisposable
     {
+        private const int DefaultBatchSize = 64 * 1024; // 64KB
+        private const int DefaultMaxIntervalSeconds = 5;
+
         private ConcurrentQueue<Tuple<EventData, string>> _queue = new ConcurrentQueue<Tuple<EventData, string>>();
-        private const int DefaultBatchSize = 128 * 1024; // 128KB
         private readonly IHasher _hasher;
         private readonly IEventHubClientWrapper _client;
         private readonly int _batchBufferSize;
+        private readonly int _maxSendIntervalSeconds;
         private string[] _partitions;
         private bool _isAccepting = true;
         private Thread _worker;
@@ -27,32 +30,38 @@ namespace Psyfon
         /// Main Constructor
         /// </summary>
         /// <param name="connectionString">For the EventHub</param>
-        /// <param name="batchBufferSize">Maximum size of the batch sent to EventHub. 128K by default</param>
+        /// <param name="maxBatchSize">Maximum size of the batch sent to EventHub. 64KB by default</param>
+        /// <param name="maxSendIntervalSeconds">Maximum number of seconds before flushing events to EventHub. 5 seconds by default</param>
         /// <param name="hasher">An implementation of uniform hashing. By default uses MD5</param>
         /// <param name="logger">A tracer/logger. By default uses Trace.WriteLine</param>
         public BufferingEventDispatcher(string connectionString,
-            int batchBufferSize = DefaultBatchSize,
+            int maxBatchSize = DefaultBatchSize,
+            int maxSendIntervalSeconds = DefaultMaxIntervalSeconds,
             IHasher hasher = null,
             Action<TraceLevel, string> logger = null):
-            this(new DefaultClientWrapper(EventHubClient.CreateFromConnectionString(connectionString)), batchBufferSize, hasher, logger)
+            this(new DefaultClientWrapper(EventHubClient.CreateFromConnectionString(connectionString)), 
+                maxBatchSize, maxSendIntervalSeconds, hasher, logger)
         {
         }
         /// <summary>
         /// Useful for custom EventHub client or testing
         /// </summary>
         /// <param name="client"></param>
-        /// <param name="batchBufferSize">Maximum size of the batch sent to EventHub. 128K by default</param>
+        /// <param name="maxBatchSize">Maximum size of the batch sent to EventHub. 128K by default</param>
+        /// <param name="maxSendIntervalSeconds">Maximum number of seconds before flushing events to EventHub. 5 seconds by default</param>
         /// <param name="hasher">An implementation of uniform hashing. By default uses MD5</param>
         /// <param name="logger">A tracer/logger. By default uses Trace.WriteLine</param>
         public BufferingEventDispatcher(IEventHubClientWrapper client,
-            int batchBufferSize = DefaultBatchSize,
+            int maxBatchSize = DefaultBatchSize,
+            int maxSendIntervalSeconds = DefaultMaxIntervalSeconds,
             IHasher hasher = null,
             Action<TraceLevel, string> logger = null
             )
         {
             _hasher = hasher ?? new Md5Hasher();
             _client = client;
-            _batchBufferSize = batchBufferSize;
+            _batchBufferSize = maxBatchSize;
+            _maxSendIntervalSeconds = maxSendIntervalSeconds;
             _logger = logger ?? ((TraceLevel level, string message) => {
                 switch (level)
                 {
@@ -151,7 +160,7 @@ namespace Psyfon
             {
                 _committers.GetOrAdd(i++,
                         new Lazy<PartitionCommitter>(
-                            () => new PartitionCommitter(_client.CreatePartitionSender(pid), _batchBufferSize, _logger)
+                            () => new PartitionCommitter(_client.CreatePartitionSender(pid), _batchBufferSize, _maxSendIntervalSeconds , _logger)
                             {
                                 Name = $"PartitionCommitter-{pid}"
                             }));

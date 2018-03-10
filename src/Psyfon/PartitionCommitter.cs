@@ -13,19 +13,23 @@ namespace Psyfon
     {
         private ProperEventDataBatch _currentBatch;
         private readonly IPartitionSenderWrapper _sender;
-        private readonly int _batchSize;
+        private readonly int _maxBatchSize;
         private readonly Action<TraceLevel, string> _logger;
+        private readonly int _maxSendIntervalSeconds;
         private readonly BlockingCollection<ProperEventDataBatch> _batches = new BlockingCollection<ProperEventDataBatch>();
         private object _lock = new object();
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private Thread _worker;
+        private DateTimeOffset _lastSent;
 
-        public PartitionCommitter(IPartitionSenderWrapper sender, int batchSize, Action<TraceLevel, string> logger)
+
+        public PartitionCommitter(IPartitionSenderWrapper sender, int maxBatchSize, int maxSendIntervalSeconds, Action<TraceLevel, string> logger)
         {
             _sender = sender;
-            _batchSize = batchSize;
+            _maxBatchSize = maxBatchSize;
             _logger = logger;
-            _currentBatch = new ProperEventDataBatch(batchSize);
+            _maxSendIntervalSeconds = maxSendIntervalSeconds;
+            _currentBatch = new ProperEventDataBatch(maxBatchSize);
             _worker = new Thread(Work);
             _worker.Start();
         }
@@ -34,14 +38,18 @@ namespace Psyfon
 
         public void Add(EventData @event)
         {
-            if (!_currentBatch.TryAdd(@event))
+            if (_lastSent == default(DateTimeOffset))
+                _lastSent = DateTimeOffset.Now;
+
+            if (DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds ||  (!_currentBatch.TryAdd(@event)))
             {
                 lock (_lock)
                 {
-                    if (!_currentBatch.TryAdd(@event))
+                    if (DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds || !_currentBatch.TryAdd(@event))
                     {
+                        _lastSent = DateTimeOffset.Now;
                         _batches.Add(_currentBatch);
-                        _currentBatch = new ProperEventDataBatch(_batchSize);
+                        _currentBatch = new ProperEventDataBatch(_maxBatchSize);
                         _currentBatch.Add(@event);
                     }
                 }
