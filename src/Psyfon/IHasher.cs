@@ -6,6 +6,6 @@ namespace Psyfon
 {
     public interface IHasher
     {
-        string Hash(string value, int numberOfBuckets);
+        int Hash(string value, int numberOfBuckets);
     }
 }

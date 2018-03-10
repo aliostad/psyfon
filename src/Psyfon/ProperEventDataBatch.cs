@@ -18,13 +18,10 @@ namespace Psyfon
 
         public int RetryCount { get; set; }
 
-        public ProperEventDataBatch(int maxSize, string partitionKey)
+        public ProperEventDataBatch(int maxSize)
         {
             _maxSize = maxSize;
-            PartitionKey = partitionKey;
         }
-
-        public string PartitionKey { get; }
 
         public IEnumerable<EventData> EventData => _events;
 

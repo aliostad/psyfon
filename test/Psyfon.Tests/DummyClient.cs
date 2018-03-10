@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.EventHubs;
 
 namespace Psyfon.Tests
 {
-    class DummyClient : IEventHubClientWrapper
+    class DummyClient : IEventHubClientWrapper, IPartitionSenderWrapper
     {
 
         public List<EventData> Events = new List<EventData>();
@@ -19,6 +20,11 @@ namespace Psyfon.Tests
 
         public int PartitionCount { get; }
 
+        public IPartitionSenderWrapper CreatePartitionSender(string partitionId)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Dispose()
         {
         }
@@ -28,16 +34,19 @@ namespace Psyfon.Tests
             return Task.FromResult(PartitionCount);
         }
 
-        public Task SendBatchAsync(IEnumerable<EventData> batch, string partitionKey)
+        public Task<string[]> GetPartitions()
         {
-            foreach (var item in batch)
+            return Task.FromResult(Enumerable.Range(0, 32).Select(x => x.ToString()).ToArray());
+        }
+
+        public async Task SendBatchAsync(IEnumerable<EventData> events)
+        {
+            foreach (var item in events)
             {
                 Events.Add(item);
             }
 
             CountSent++;
-
-            return Task.FromResult(false);
         }
     }
 }

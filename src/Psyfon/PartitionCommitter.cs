@@ -12,7 +12,7 @@ namespace Psyfon
     internal class PartitionCommitter : IDisposable
     {
         private ProperEventDataBatch _currentBatch;
-        private readonly IEventHubClientWrapper _client;
+        private readonly IPartitionSenderWrapper _sender;
         private readonly int _batchSize;
         private readonly Action<TraceLevel, string> _logger;
         private readonly BlockingCollection<ProperEventDataBatch> _batches = new BlockingCollection<ProperEventDataBatch>();
@@ -20,13 +20,12 @@ namespace Psyfon
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private Thread _worker;
 
-        public PartitionCommitter(IEventHubClientWrapper client, int batchSize, string partitionKey, Action<TraceLevel, string> logger)
+        public PartitionCommitter(IPartitionSenderWrapper sender, int batchSize, Action<TraceLevel, string> logger)
         {
-            _client = client;
+            _sender = sender;
             _batchSize = batchSize;
-            PartitionKey = partitionKey;
             _logger = logger;
-            _currentBatch = new ProperEventDataBatch(batchSize, partitionKey);
+            _currentBatch = new ProperEventDataBatch(batchSize);
             _worker = new Thread(Work);
             _worker.Start();
         }
@@ -40,7 +39,7 @@ namespace Psyfon
                     if (!_currentBatch.TryAdd(@event))
                     {
                         _batches.Add(_currentBatch);
-                        _currentBatch = new ProperEventDataBatch(_batchSize, PartitionKey);
+                        _currentBatch = new ProperEventDataBatch(_batchSize);
                         _currentBatch.Add(@event);
                     }
                 }
@@ -49,8 +48,8 @@ namespace Psyfon
 
         private void Commit(ProperEventDataBatch batch)
         {
-            _logger(TraceLevel.Verbose, $"About to commit batch of size: {batch.CurrentSize}");
-            _client.SendBatchAsync(batch.EventData, PartitionKey).GetAwaiter().GetResult(); // no point in doing async, dedicated thread would be waiting anyway
+            _logger(TraceLevel.Verbose, $"About to commit batch of size: {batch.CurrentSize}");            
+            _sender.SendBatchAsync(batch.EventData).GetAwaiter().GetResult(); // no point in doing async, dedicated thread would be waiting anyway
         }
 
         private void Work()
@@ -77,7 +76,6 @@ namespace Psyfon
 
                     _logger(TraceLevel.Error, e.ToString());
                 }
-                
             }            
         }
 

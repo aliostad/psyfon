@@ -6,11 +6,11 @@ using Microsoft.Azure.EventHubs;
 
 namespace Psyfon
 {
-    internal class DefaultWrapper : IEventHubClientWrapper
+    internal class DefaultClientWrapper : IEventHubClientWrapper
     {
         private readonly EventHubClient _client;
 
-        public DefaultWrapper(EventHubClient client)
+        public DefaultClientWrapper(EventHubClient client)
         {
             _client = client;
         }
@@ -20,15 +20,15 @@ namespace Psyfon
             _client.Close();
         }
 
-        public async Task<int> GetPartitionCount()
+        public async Task<string[]> GetPartitions()
         {
             var info = await _client.GetRuntimeInformationAsync();
-            return info.PartitionCount;
+            return info.PartitionIds;
         }
 
-        public Task SendBatchAsync(IEnumerable<EventData> batch, string partitionKey)
+        public IPartitionSenderWrapper CreatePartitionSender(string partitionId)
         {
-            return _client.SendAsync(batch, partitionKey);            
+            return new DefaultPartitionSender(_client.CreatePartitionSender(partitionId)); 
         }
     }
 }

@@ -16,11 +16,11 @@ namespace Psyfon
         private readonly IHasher _hasher;
         private readonly IEventHubClientWrapper _client;
         private readonly int _batchBufferSize;
-        private int _partitionCount;
+        private string[] _partitions;
         private bool _isAccepting = true;
         private Thread _worker;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-        private ConcurrentDictionary<string, Lazy<PartitionCommitter>> _committers = new ConcurrentDictionary<string, Lazy<PartitionCommitter>>();
+        private ConcurrentDictionary<int, Lazy<PartitionCommitter>> _committers = new ConcurrentDictionary<int, Lazy<PartitionCommitter>>();
         private Action<TraceLevel, string> _logger;
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Psyfon
             int batchBufferSize = DefaultBatchSize,
             IHasher hasher = null,
             Action<TraceLevel, string> logger = null):
-            this(new DefaultWrapper(EventHubClient.CreateFromConnectionString(connectionString)), batchBufferSize, hasher, logger)
+            this(new DefaultClientWrapper(EventHubClient.CreateFromConnectionString(connectionString)), batchBufferSize, hasher, logger)
         {
         }
         /// <summary>
@@ -100,9 +100,8 @@ namespace Psyfon
                 Tuple<EventData, string> data;
                 if(_queue.TryDequeue(out data))
                 {
-                    var pk = _hasher.Hash(data.Item2 ?? Guid.NewGuid().ToString(), _partitionCount);
-                    var committer = _committers.GetOrAdd(pk,
-                        new Lazy<PartitionCommitter>(() => new PartitionCommitter(_client, _batchBufferSize, pk, _logger)));
+                    var hash = _hasher.Hash(data.Item2 ?? Guid.NewGuid().ToString(), _partitions.Count());
+                    var committer = _committers[hash];
                     committer.Value.Add(data.Item1);
                 }
                 else
@@ -146,7 +145,14 @@ namespace Psyfon
         /// </summary>
         public void Start()
         {
-            _partitionCount = _client.GetPartitionCount().GetAwaiter().GetResult();
+            _partitions = _client.GetPartitions().GetAwaiter().GetResult();
+            int i = 0;
+            foreach (var pid in _partitions)
+            {
+                _committers.GetOrAdd(i++,
+                        new Lazy<PartitionCommitter>(() => new PartitionCommitter(_client.CreatePartitionSender(pid), _batchBufferSize, _logger)));
+            }
+            var committer = 
             _worker = new Thread(Work);
             _worker.Start();
         }

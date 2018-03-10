@@ -11,7 +11,7 @@ namespace Psyfon.Tests
         public void Md5HasherHashersToBuckets()
         {
             int bucketCount = 4;
-            var dic = new Dictionary<string, string>();
+            var dic = new Dictionary<int, string>();
             var hasher = new Md5Hasher();
 
             for (int i = 0; i < 1000; i++)

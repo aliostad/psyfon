@@ -8,8 +8,8 @@ namespace Psyfon
 {
     public interface IEventHubClientWrapper: IDisposable
     {
-        Task SendBatchAsync(IEnumerable<EventData> batch, string partitionKey);
+        IPartitionSenderWrapper CreatePartitionSender(string partitionId);
 
-        Task<int> GetPartitionCount();
+        Task<string[]> GetPartitions();
     }
 }
