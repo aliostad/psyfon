@@ -9,7 +9,11 @@ using System.Diagnostics;
 
 namespace Psyfon
 {
-    public class BufferingEventDispatcher : IDisposable
+    /// <summary>
+    /// The main class responsible for buffering and sending events to EventHub
+    /// Per EventHub, you need to have a single instance of this class in your process.
+    /// </summary>
+    public class BufferingEventDispatcher : IEventDispatcher
     {
         private const int DefaultBatchSize = 64 * 1024; // 64KB
         private const int DefaultMaxIntervalSeconds = 5;
@@ -80,7 +84,7 @@ namespace Psyfon
         }
 
         /// <summary>
-        /// 
+        /// Adds events to be dispatched.
         /// </summary>
         /// <param name="event"></param>
         /// <param name="partitionKey"></param>
@@ -93,7 +97,7 @@ namespace Psyfon
             return _isAccepting;
         }
         /// <summary>
-        /// 
+        /// Adds events to be dispatched.
         /// </summary>
         /// <param name="events"></param>
         /// <param name="partitionKey"></param>
