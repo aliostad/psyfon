@@ -15,72 +15,39 @@ namespace Psyfon
     /// </summary>
     public class BufferingEventDispatcher : IEventDispatcher
     {
-        private const int DefaultBatchSize = 64 * 1024; // 64KB
-        private const int DefaultMaxIntervalSeconds = 5;
+        public static readonly int DefaultBatchSize = 64 * 1024; // 64KB
+        public static readonly int DefaultMaxIntervalMillis = 1000;
 
         private ConcurrentQueue<Tuple<EventData, string>> _queue = new ConcurrentQueue<Tuple<EventData, string>>();
-        private readonly IHasher _hasher;
         private readonly IEventHubClientWrapper _client;
-        private readonly int _batchBufferSize;
-        private readonly int _maxSendIntervalSeconds;
         private string[] _partitions;
         private bool _isAccepting = true;
         private Thread _worker;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private ConcurrentDictionary<int, Lazy<PartitionCommitter>> _committers = new ConcurrentDictionary<int, Lazy<PartitionCommitter>>();
-        private Action<TraceLevel, string> _logger;
         private DateTimeOffset _lastPoke;
+        private readonly DispatchSettings _settings;
 
         /// <summary>
         /// Main Constructor
         /// </summary>
         /// <param name="connectionString">For the EventHub</param>
-        /// <param name="maxBatchSize">Maximum size of the batch sent to EventHub. 64KB by default</param>
-        /// <param name="maxSendIntervalSeconds">Maximum number of seconds before flushing events to EventHub. 5 seconds by default</param>
-        /// <param name="hasher">An implementation of uniform hashing. By default uses MD5</param>
-        /// <param name="logger">A tracer/logger. By default uses Trace.WriteLine</param>
+        /// <param name="settings"></param>
         public BufferingEventDispatcher(string connectionString,
-            int maxBatchSize = DefaultBatchSize,
-            int maxSendIntervalSeconds = DefaultMaxIntervalSeconds,
-            IHasher hasher = null,
-            Action<TraceLevel, string> logger = null):
+            DispatchSettings settings = null):
             this(new DefaultClientWrapper(EventHubClient.CreateFromConnectionString(connectionString)), 
-                maxBatchSize, maxSendIntervalSeconds, hasher, logger)
+                settings)
         {
         }
         /// <summary>
         /// Useful for custom EventHub client or testing
         /// </summary>
         /// <param name="client"></param>
-        /// <param name="maxBatchSize">Maximum size of the batch sent to EventHub. 128K by default</param>
-        /// <param name="maxSendIntervalSeconds">Maximum number of seconds before flushing events to EventHub. 5 seconds by default</param>
-        /// <param name="hasher">An implementation of uniform hashing. By default uses MD5</param>
-        /// <param name="logger">A tracer/logger. By default uses Trace.WriteLine</param>
+        /// <param name="settings"></param>
         public BufferingEventDispatcher(IEventHubClientWrapper client,
-            int maxBatchSize = DefaultBatchSize,
-            int maxSendIntervalSeconds = DefaultMaxIntervalSeconds,
-            IHasher hasher = null,
-            Action<TraceLevel, string> logger = null
-            )
+            DispatchSettings settings)
         {
-            _hasher = hasher ?? new Md5Hasher();
-            _client = client;
-            _batchBufferSize = maxBatchSize;
-            _maxSendIntervalSeconds = maxSendIntervalSeconds;
-            _logger = logger ?? ((TraceLevel level, string message) => {
-                switch (level)
-                {
-                    case TraceLevel.Error:
-                        Trace.TraceError(message);
-                        break;
-                    case TraceLevel.Warning:
-                        Trace.TraceWarning(message);
-                        break;
-                    default:
-                        Trace.TraceInformation(message);
-                        break;
-                }
-            });
+            _settings = settings ?? new DispatchSettings();
         }
 
         /// <summary>
@@ -116,7 +83,7 @@ namespace Psyfon
                 Tuple<EventData, string> data;
                 if(_queue.TryDequeue(out data))
                 {
-                    var hash = _hasher.Hash(data.Item2 ?? Guid.NewGuid().ToString(), _partitions.Count());
+                    var hash = _settings.Hasher.Hash(data.Item2 ?? Guid.NewGuid().ToString(), _partitions.Count());
                     var committer = _committers[hash];
                     committer.Value.Add(data.Item1);
                 }
@@ -133,7 +100,7 @@ namespace Psyfon
                 }
             }
 
-            if(DateTimeOffset.Now.Subtract(_lastPoke).TotalSeconds > _maxSendIntervalSeconds)
+            if(DateTimeOffset.Now.Subtract(_lastPoke).TotalSeconds > _settings.MaxSendIntervalMillis)
             {
                 _lastPoke = DateTimeOffset.Now;
                 foreach (var c in _committers.Values)
@@ -176,13 +143,14 @@ namespace Psyfon
             {
                 _committers.GetOrAdd(i++,
                         new Lazy<PartitionCommitter>(
-                            () => new PartitionCommitter(_client.CreatePartitionSender(pid), _batchBufferSize, _maxSendIntervalSeconds , _logger)
+                            () => new PartitionCommitter(_client.CreatePartitionSender(pid), _settings)
                             {
                                 Name = $"PartitionCommitter-{pid}"
                             }));
             }
 
             _worker = new Thread(Work);
+            _worker.IsBackground = _settings.UseBackgroundThreads;
             _worker.Start();
         }
     }

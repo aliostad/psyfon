@@ -13,25 +13,21 @@ namespace Psyfon
     {
         private ProperEventDataBatch _currentBatch;
         private readonly IPartitionSenderWrapper _sender;
-        private readonly int _maxBatchSize;
-        private readonly Action<TraceLevel, string> _logger;
-        private readonly int _maxSendIntervalSeconds;
         private readonly BlockingCollection<ProperEventDataBatch> _batches = new BlockingCollection<ProperEventDataBatch>();
         private object _lock = new object();
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private Thread _worker;
         private DateTimeOffset _lastSent;
+        private readonly DispatchSettings _settings;
 
-
-        public PartitionCommitter(IPartitionSenderWrapper sender, int maxBatchSize, int maxSendIntervalSeconds, Action<TraceLevel, string> logger)
+        public PartitionCommitter(IPartitionSenderWrapper sender, DispatchSettings settings)
         {
             _sender = sender;
-            _maxBatchSize = maxBatchSize;
-            _logger = logger;
-            _maxSendIntervalSeconds = maxSendIntervalSeconds;
-            _currentBatch = new ProperEventDataBatch(maxBatchSize);
             _worker = new Thread(Work);
+            _worker.IsBackground = settings.UseBackgroundThreads;
             _worker.Start();
+            _currentBatch = new ProperEventDataBatch(settings.MaxBatchSize);
+            _settings = settings;
         }
 
         public string Name { get; set; }
@@ -41,7 +37,7 @@ namespace Psyfon
             if (_lastSent == default(DateTimeOffset))
                 _lastSent = DateTimeOffset.Now;
 
-            Func<bool> predicate = () => DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds || 
+            Func<bool> predicate = () => DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _settings.MaxSendIntervalMillis || 
                     (!_currentBatch.TryAdd(@event));
             RebatchIfConditionMet(predicate, () => _currentBatch.Add(@event));               
         }
@@ -56,7 +52,7 @@ namespace Psyfon
                     {
                         _lastSent = DateTimeOffset.Now;
                         _batches.Add(_currentBatch);
-                        _currentBatch = new ProperEventDataBatch(_maxBatchSize);
+                        _currentBatch = new ProperEventDataBatch(_settings.MaxBatchSize);
                         if(doIfRebatch != null)
                             doIfRebatch();
                         return true;
@@ -69,14 +65,14 @@ namespace Psyfon
 
         public void CheckTimeElapsedSinceLastRebatch()
         {
-            RebatchIfConditionMet(() => DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _maxSendIntervalSeconds);
+            RebatchIfConditionMet(() => DateTimeOffset.Now.Subtract(_lastSent).TotalSeconds > _settings.MaxSendIntervalMillis);
         }
 
         private void Commit(ProperEventDataBatch batch)
         {
-            _logger(TraceLevel.Verbose, $"{Name}: About to commit batch of size: {batch.CurrentSize}");            
+            _settings.Logger(TraceLevel.Verbose, $"{Name}: About to commit batch of size: {batch.CurrentSize}");            
             _sender.SendBatchAsync(batch.EventData).GetAwaiter().GetResult(); // no point in doing async, dedicated thread would be waiting anyway
-            _logger(TraceLevel.Verbose, $"{Name}: Successfully sent batch. {_batches.Count} batches left");
+            _settings.Logger(TraceLevel.Verbose, $"{Name}: Successfully sent batch. {_batches.Count} batches left");
         }
 
         private void Work()
@@ -101,7 +97,7 @@ namespace Psyfon
                     if (batch != null && batch.RetryCount++ < 3) 
                         _batches.Add(batch);
 
-                    _logger(TraceLevel.Error, e.ToString());
+                    _settings.Logger(TraceLevel.Error, e.ToString());
                 }
             }            
         }

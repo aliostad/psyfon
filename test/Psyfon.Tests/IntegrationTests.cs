@@ -22,7 +22,7 @@ namespace Psyfon.Tests
             };
 
 
-            var bed = new BufferingEventDispatcher(cn, logger: logger);
+            var bed = new BufferingEventDispatcher(cn, new DispatchSettings() { Logger= logger});
             bed.Start();
             for (int i = 0; i < 100; i++)
             {
