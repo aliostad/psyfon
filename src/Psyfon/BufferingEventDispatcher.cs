@@ -50,6 +50,7 @@ namespace Psyfon
             DispatchSettings settings)
         {
             _settings = settings ?? new DispatchSettings();
+            _client = client;
         }
 
         /// <summary>
