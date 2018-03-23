@@ -28,6 +28,10 @@ namespace Psyfon
         /// <param name="partitionKey"></param>
         /// <returns>Whether message was accepted. If one is not accepted it will be false.</returns>
         bool Add(IEnumerable<EventData> events, string partitionKey = null);
-        
+     
+        /// <summary>
+        /// Number of events not yet sent
+        /// </summary>
+        int EventsInBuffer { get; }
     }
 }

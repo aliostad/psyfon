@@ -28,6 +28,8 @@ namespace Psyfon
         private DateTimeOffset _lastPoke;
         private readonly DispatchSettings _settings;
 
+        public int EventsInBuffer { get => _committers.Values.Sum(x => x.Value.CurrentBatchSize); }
+
         /// <summary>
         /// Main Constructor
         /// </summary>

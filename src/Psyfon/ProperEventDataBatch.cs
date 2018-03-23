@@ -23,6 +23,14 @@ namespace Psyfon
             _maxSize = maxSize;
         }
 
+        public int Count
+        {
+            get
+            {
+                return _events.Count;
+            }
+        }
+
         public IEnumerable<EventData> EventData => _events;
 
         public bool TryAdd(EventData @event)

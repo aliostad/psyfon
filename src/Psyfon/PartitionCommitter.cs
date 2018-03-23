@@ -32,6 +32,14 @@ namespace Psyfon
 
         public string Name { get; set; }
 
+        public int CurrentBatchSize
+        {
+            get
+            {
+                return _currentBatch?.Count ?? 0;
+            }
+        }
+
         public void Add(EventData @event)
         {
             if (_lastSent == default(DateTimeOffset))
