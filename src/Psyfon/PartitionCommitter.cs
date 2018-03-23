@@ -3,7 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,7 +36,7 @@ namespace Psyfon
         {
             get
             {
-                return _currentBatch?.Count ?? 0;
+                return (_currentBatch?.Count ?? 0) + _batches.Sum(x => x.Count);
             }
         }
 
