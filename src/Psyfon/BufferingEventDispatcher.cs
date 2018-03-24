@@ -27,6 +27,7 @@ namespace Psyfon
         private ConcurrentDictionary<int, Lazy<PartitionCommitter>> _committers = new ConcurrentDictionary<int, Lazy<PartitionCommitter>>();
         private DateTimeOffset _lastPoke;
         private readonly DispatchSettings _settings;
+        private bool _bufferFull = false;
 
         public int EventsInBuffer { get => _committers.Values.Sum(x => x.Value.CurrentBatchSize); }
 
@@ -61,6 +62,9 @@ namespace Psyfon
         /// <returns>Whether message was accepted</returns>
         public bool Add(EventData @event, string partitionKey = null)
         {
+            if (_bufferFull)
+                throw new InvalidOperationException($"Buffer is full. Number of events in buffer: {EventsInBuffer}");
+
             if(_isAccepting)
                 _queue.Enqueue(new Tuple<EventData, string>(@event, partitionKey));
 
@@ -95,6 +99,7 @@ namespace Psyfon
                     try
                     {
                         Task.Delay(100, _cancellationTokenSource.Token).GetAwaiter().GetResult();
+                        _bufferFull = this.EventsInBuffer > _settings.MaximumBufferedEvents;
                     }
                     catch
                     {

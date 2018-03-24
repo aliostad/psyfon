@@ -5,6 +5,9 @@ using System.Text;
 
 namespace Psyfon
 {
+    /// <summary>
+    /// Settings for the Dispatcher
+    /// </summary>
     public class DispatchSettings
     {
         /// <summary>
@@ -45,5 +48,11 @@ namespace Psyfon
         /// Default behaviour ensures all buffered events get committed before process terminates. 
         /// </summary>
         public bool UseBackgroundThreads { get; set; } = false;
+
+        /// <summary>
+        /// Maximum number of events buffered. Default is 1 million events.
+        /// More than that and Add() will start throwing exception.
+        /// </summary>
+        public int MaximumBufferedEvents { get; set; } = 1000 * 1000;
     }
 }
