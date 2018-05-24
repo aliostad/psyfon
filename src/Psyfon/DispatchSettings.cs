@@ -28,7 +28,8 @@ namespace Psyfon
         /// <summary>
         /// A tracer/logger. By default uses Trace.WriteLine
         /// </summary>
-        public Action<TraceLevel, string> Logger = ((TraceLevel level, string message) => {
+        public Action<TraceLevel, string> Logger { get; set; } = ((TraceLevel level, string message) =>
+        {
             switch (level)
             {
                 case TraceLevel.Error:
