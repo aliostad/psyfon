@@ -123,21 +123,22 @@ namespace Psyfon
         /// </summary>
         public void Dispose()
         {
-            try
+            _isAccepting = false;
+            _cancellationTokenSource.Cancel();
+            foreach (var kv in _committers)
             {
-                _isAccepting = false;
-                _cancellationTokenSource.Cancel();
-                foreach (var kv in _committers)
+                try
                 {
                     kv.Value.Value.Dispose();
                 }
-
-                _client.Dispose();
+                catch (Exception e)
+                {
+                    Trace.WriteLine(e);
+                }
             }
-            catch
-            {
-                // ignore 
-            }           
+
+            _client.Dispose();
+                  
         }
 
         /// <summary>

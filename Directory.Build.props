@@ -4,7 +4,7 @@
 		<Description>A High-Performance Azure EventHubs Sink capable of buffering/batching</Description>
 		<Authors>Ali Kheyrollahi</Authors>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<Version>0.5.0</Version>
+		<Version>0.5.1</Version>
 		<PackageProjectUrl>https://github.com/aliostad/psyfon</PackageProjectUrl>
 		<PackageLicenseUrl>https://github.com/aliostad/psyfon/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
