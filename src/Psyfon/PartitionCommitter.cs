@@ -78,9 +78,12 @@ namespace Psyfon
 
         private void Commit(ProperEventDataBatch batch)
         {
-            _settings.Logger(TraceLevel.Verbose, $"{Name}: About to commit batch of size: {batch.CurrentSize}");            
-            _sender.SendBatchAsync(batch.EventData).GetAwaiter().GetResult(); // no point in doing async, dedicated thread would be waiting anyway
-            _settings.Logger(TraceLevel.Verbose, $"{Name}: Successfully sent batch. {_batches.Count} batches left");
+            if (batch.Count > 0)
+            {
+                _settings.Logger(TraceLevel.Verbose, $"{Name}: About to commit batch of size: {batch.CurrentSize}");
+                _sender.SendBatchAsync(batch.EventData).GetAwaiter().GetResult(); // no point in doing async, dedicated thread would be waiting anyway
+                _settings.Logger(TraceLevel.Verbose, $"{Name}: Successfully sent batch. {_batches.Count} batches left");
+            }
         }
 
         private void Work()
