@@ -22,7 +22,7 @@ var dispatcher = new BufferingEventDispatcher("<YOUR EVENTHUB CONNECTION STRING>
 ```
 And in your application, simply create `EventData` and `Add` (optionally send a PartitionKey):
 
-```
+``` csharp
 var ed = new EventData(myEventSerialisedAsByteArray);
 dispatcher.Add(ed); // you may also supply an optional PartitionKey string.
 ```
